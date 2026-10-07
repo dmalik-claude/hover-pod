@@ -205,6 +205,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* embedded in another site (e.g. a portfolio): scrolling and vertical swipes go to the host page */
 html.embedded, html.embedded body { overflow: visible; overscroll-behavior: auto; }
 html.embedded .stage { touch-action: pan-y; }
+/* embedded: the how-to line sits inside the view, centred and easy to read */
+html.embedded .hint {
+  left: 50%; right: auto; bottom: clamp(18px, 3vh, 30px);
+  transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 32px);
+  font-size: 13px; letter-spacing: .02em; text-align: center;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+@media (max-width: 760px) {
+  html.embedded .hint { display: block; bottom: calc(76px + env(safe-area-inset-bottom)); font-size: 12px; }
+}
+@media (max-width: 520px) {
+  html.embedded .hint { bottom: calc(118px + env(safe-area-inset-bottom)); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -289,7 +303,9 @@ const EMBEDDED = (() => { try { return window.self !== window.top; } catch { ret
 const params = new URLSearchParams(location.search);       // ?theme=dark|light sets the starting mode
 if (EMBEDDED) {
   document.documentElement.classList.add('embedded');
-  hint.textContent = `Drag to rotate · ${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'} + scroll to zoom`;
+  hint.textContent = matchMedia('(pointer: coarse)').matches
+    ? 'Drag to turn it · Press Power to lift off · Pinch to zoom'
+    : 'Drag to turn it · Press Power to lift off · ⌘ / Ctrl + scroll to zoom';
 }
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
 const phoneMQ = matchMedia('(max-width: 760px)');
