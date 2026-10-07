@@ -204,6 +204,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .menu button { font-size: 13px; }
 }
 
+/* embedded in another site (e.g. a portfolio): scrolling and vertical swipes go to the host page */
+html.embedded, html.embedded body { overflow: visible; overscroll-behavior: auto; }
+html.embedded .stage { touch-action: pan-y; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -286,6 +290,12 @@ const btnPower = $('#btnPower'), btnHead = $('#btnHead'), btnBrake = $('#btnBrak
 const btnHonk = $('#btnHonk'), btnReset = $('#btnReset'), btnTheme = $('#btnTheme'), btnSpecs = $('#btnSpecs');
 const btnSound = $('#btnSound'), soundLabel = $('#soundLabel');
 const statusText = $('#statusText'), themeLabel = $('#themeLabel'), themeMeta = $('meta[name="theme-color"]');
+const EMBEDDED = (() => { try { return window.self !== window.top; } catch { return true; } })();
+const params = new URLSearchParams(location.search);       // ?theme=dark|light sets the starting mode
+if (EMBEDDED) {
+  document.documentElement.classList.add('embedded');
+  hint.textContent = `Drag to rotate · ${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'} + scroll to zoom`;
+}
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
 const phoneMQ = matchMedia('(max-width: 760px)');
 const reduced = () => reduceMQ.matches;
@@ -565,7 +575,8 @@ btnSpecs.addEventListener('click', () => {
   let saved = null;
   let savedMute = null;
   try { saved = localStorage.getItem('cv-theme'); savedMute = localStorage.getItem('cv-muted'); } catch { /* storage unavailable */ }
-  setTheme(saved === 'dark', false);
+  const forced = params.get('theme');
+  setTheme(forced ? forced === 'dark' : saved === 'dark', false);
   setMuted(savedMute === '1', false);
 }
 
@@ -626,6 +637,7 @@ stage.addEventListener('pointercancel', release);
 stage.addEventListener('lostpointercapture', release);
 stage.addEventListener('dblclick', resetView);
 stage.addEventListener('wheel', (e) => {
+  if (EMBEDDED && !e.ctrlKey && !e.metaKey) return;        // embedded: plain scrolling moves the host page
   e.preventDefault();
   let dy = e.deltaY;
   if (e.deltaMode === 1) dy *= 16; else if (e.deltaMode === 2) dy *= 400;
